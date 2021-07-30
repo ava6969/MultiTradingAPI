@@ -22,6 +22,46 @@ namespace live_broker
     private:
         const std::string API_KEY, SECRET_KEY, BASE_URL;
         std::unique_ptr<RestClient> client;
+
+        template<typename T>
+        T Get(std::function<std::unique_ptr<Reply>(RequestBuilder&&)>&& reply_fn) {
+            try {
+                return client->ProcessWithPromiseT<T>([&](Context& ctx)
+                {
+                    T data;
+                    auto reply = reply_fn(std::move(RequestBuilder(ctx).Get(BASE_URL + "/v2/account")
+                            // Add some headers for good taste
+                            .Header("APCA-API-KEY-ID", API_KEY)
+                            .Header("APCA-API-SECRET-KEY", SECRET_KEY)));
+
+                    SerializeFromJson(data, std::move(reply));
+                    return data;
+                }).get();
+            }catch(std::exception const& ex)
+            {
+                std::cout << ex.what() << "\n";
+            }
+        }
+
+        template<typename T>
+        T Post(std::function<std::unique_ptr<Reply>(RequestBuilder&&)>&& reply_fn) {
+            try {
+                return client->ProcessWithPromiseT<T>([&](Context& ctx)
+                {
+                    T data;
+                    auto reply = reply_fn(std::move(RequestBuilder(ctx).Post(BASE_URL + "/v2/account")
+                            // Add some headers for good taste
+                            .Header("APCA-API-KEY-ID", API_KEY)
+                            .Header("APCA-API-SECRET-KEY", SECRET_KEY)));
+
+                    SerializeFromJson(data, std::move(reply));
+                    return data;
+                }).get();
+            }catch(std::exception const& ex)
+            {
+                std::cout << ex.what() << "\n";
+            }
+        }
     public:
         Alpaca(bool live, std::string  API_KEY, std::string  SECRET_KEY)
         :API_KEY(std::move(API_KEY)),
@@ -32,23 +72,12 @@ namespace live_broker
 
         }
 
-        Account GetAccount()
+        auto GetAccount()
         {
-            try {
-                return client->ProcessWithPromiseT<Account>([&](Context& ctx)
-                {
-                    Account account;
-                    SerializeFromJson(account, RequestBuilder(ctx).Get(BASE_URL + "/v2/account")
-                    // Add some headers for good taste
-                    .Header("APCA-API-KEY-ID", API_KEY)
-                    .Header("APCA-API-SECRET-KEY", SECRET_KEY).Execute());
-                    return account;
-                }).get();
-            }catch(std::exception const& ex)
+            return Get<Account>([](RequestBuilder&& builder)
             {
-                std::cout << ex.what() << "\n";
-            }
-
+                return builder.Execute();
+            });
         }
 
         auto GetOrders()
@@ -57,6 +86,7 @@ namespace live_broker
                 return client->ProcessWithPromiseT<vector<Order>>([&](Context& ctx)
                 {
                     vector<Order> orders;
+
                     SerializeFromJson(orders, RequestBuilder(ctx).Get(BASE_URL + "/v2/orders")
                     // Add some headers for good taste
                     .Header("APCA-API-KEY-ID", API_KEY)
@@ -88,7 +118,7 @@ namespace live_broker
             }
         }
 
-        auto PlaceNewOrder(string const& symbol, float amt, float qty, bool buy) {
+        auto PlaceNewMarketOrder(string const& symbol, float amt, float qty, bool buy) {
             try {
                 return client->ProcessWithPromiseT<Order>([&](Context& ctx)
                 {
@@ -99,7 +129,8 @@ namespace live_broker
                     .Argument("notional", std::to_string(amt))
                     .Argument("side", buy ? "buy" : "sell")
                     .Argument("type", "market")
-                    .Argument("time_in_force")
+                    .Argument("time_in_force", "gtc")
+                    .Argument("limit_", "gtc")
                     .Header("APCA-API-KEY-ID", API_KEY)
                     .Header("APCA-API-SECRET-KEY", SECRET_KEY).Execute());
                     return order;
