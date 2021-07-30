@@ -18,19 +18,21 @@ int main() {
     live_broker::Alpaca alpaca1(false, PAPER_API_KEY, PAPER_SECRET_KEY);
 
     auto account = alpaca1.GetAccount();
-//    for(auto const& order : alpaca1.GetOrders())
-//    {
-//        std::cout << order.id << "\n";
-//    }
-//
-//    auto order = alpaca1.PlaceNewMarketOrder("AAPL", 1, true);
-//
-//    std::cout << order.id << "\n";
-//
-//    for(auto const& _order : alpaca1.GetOrders())
-//    {
-//        std::cout << _order.id << "\n";
-//    }
+    std::cout << "All Orders:\n";
+    for(auto const& order : alpaca1.GetOrders())
+    {
+        std::cout << order.id << "\n";
+    }
+
+    auto order = alpaca1.PlaceMarketOrder("AAPL", 1, true);
+
+    std::cout << order.id << "\n";
+
+    std::cout << "All Orders:\n";
+    for(auto const& _order : alpaca1.GetOrders())
+    {
+        std::cout << _order.id << "\n";
+    }
 
     std::cout << account.buying_power << "\n";
 
