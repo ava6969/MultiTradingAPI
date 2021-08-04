@@ -9,18 +9,19 @@ set(CMAKE_CXX_STANDARD 20)
 file(GLOB ALPACA_LIB src/alpaca/*.cpp)
 
 include_directories(includes)
-
+set(Boost_USE_STATIC_LIBS ON)
 find_package(glog CONFIG REQUIRED)
 find_package(restc-cpp CONFIG REQUIRED)
-find_package(Boost COMPONENTS coroutine context REQUIRED )
+find_package(Boost COMPONENTS coroutine context system program_options filesystem log REQUIRED )
 find_path(CPP_HTTPLIB_INCLUDE_DIRS "httplib.h")
 find_path(PICOSHA2_INCLUDE_DIRS "picosha2.h")
 
 add_executable(APITest main.cpp
         #${ALPACA_LIB}
-        includes/alpaca/response.h includes/alpaca/resp_reflection.h src/alpaca/alpaca.cpp
+        includes/alpaca/response.h includes/alpaca/reflections.h src/alpaca/alpaca.cpp
         includes/alpaca/alpaca.h src/coinbase/coinbase.cpp includes/coinbase/coinbase.h
-        includes/coinbase/response.h includes/coinbase/resp_reflection.h includes/broker.h)
+        includes/coinbase/response.h includes/coinbase/resp_reflection.h includes/broker.h includes/alpaca/request.h
+        )
 
 target_link_libraries(APITest PRIVATE ${Boost_LIBRARIES}
         restc-cpp -lpthread -lboost_log

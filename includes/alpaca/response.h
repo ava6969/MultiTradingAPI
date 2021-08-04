@@ -66,7 +66,7 @@ struct Order {
 
 };
 
-class Asset{
+struct Asset{
     std::string asset_class;
     bool easy_to_borrow;
     std::string exchange;
@@ -78,8 +78,7 @@ class Asset{
     bool tradable;
 };
 
-class Position{
-
+struct Position{
     std::string asset_class;
     std::string asset_id;
     std::string avg_entry_price;
@@ -98,7 +97,7 @@ class Position{
     std::string unrealized_plpc;
 };
 
-struct Portfolio{
+struct PortfolioHistory{
     double base_value;
     std::vector<double> equity;
     std::vector<double> profit_loss;
@@ -106,7 +105,5 @@ struct Portfolio{
     std::string timeframe;
     std::vector<uint64_t> timestamp;
 };
-
-
 
 #endif //APITEST_RESPONSE_H
