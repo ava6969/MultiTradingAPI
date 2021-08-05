@@ -137,3 +137,16 @@ BOOST_FUSION_ADAPT_STRUCT(
         (std::string, avatar_url),
         (std::string, resource),
         (std::string, resource_path))
+
+BOOST_FUSION_ADAPT_STRUCT(
+        Clock,
+        (std::string, timestamp),
+        (bool, is_open),
+        (std::string, next_open),
+        (std::string, next_close))
+
+BOOST_FUSION_ADAPT_STRUCT(
+        Calender,
+        (std::string, date),
+        (std::string, open),
+        (std::string, close))

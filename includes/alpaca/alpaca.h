@@ -174,12 +174,33 @@ namespace broker
 
         }
 
+        auto GetClock()
+        {
+            set_method("account/clock");
+            return Get<Clock>();
+        }
+
+        vector<Calender> GetCalender(string const& start,
+                                     string const& end) {
+            set_method("account/calender");
+
+            return Get<vector<Calender>>([&](RequestBuilder& builder)
+            {
+                builder
+                .Argument("start", start)
+                .Argument("end", end);
+            });
+        }
+
+
        ~Alpaca()
        {
             client->CloseWhenReady(true);
        }
 
     };
+
+
 }
 
 

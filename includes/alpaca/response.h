@@ -109,7 +109,14 @@ struct PortfolioHistory{
 struct Clock{
     std::string timestamp;
     bool is_open;
+    std::string next_open;
+    std::string next_close;
 
 };
 
+struct Calender{
+    std::string date;
+    std::string open;
+    std::string close;
+};
 #endif //APITEST_RESPONSE_H
