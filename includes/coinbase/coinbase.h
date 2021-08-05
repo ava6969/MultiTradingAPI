@@ -5,7 +5,6 @@
 #ifndef APITEST_COINBASE_H
 #define APITEST_COINBASE_H
 
-#include "picosha2.h"
 #include "openssl/sha.h"
 #include "openssl/hmac.h"
 #include "openssl/ossl_typ.h"

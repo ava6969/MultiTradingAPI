@@ -154,6 +154,26 @@ namespace broker
             });
        }
 
+       vector<Asset> GetAssets(string const& status,
+                               string const& asset_class="us_equity") {
+
+            set_method("account/assets");
+
+            return Get<vector<Asset>>([&](RequestBuilder& builder)
+            {
+                builder
+                .Argument("status", status)
+                .Argument("asset_class", asset_class);
+            });
+       }
+
+       Asset GetAnAsset(string const& asset_id) {
+
+            set_method("account/assets/"s.append(asset_id));
+            return Get<Asset>();
+
+        }
+
        ~Alpaca()
        {
             client->CloseWhenReady(true);

@@ -2,9 +2,7 @@
 // Created by dewe on 7/30/21.
 //
 
-#ifndef APITEST_RESP_REFLECTION_H
-#define APITEST_RESP_REFLECTION_H
-
+#pragma once
 #include "alpaca/response.h"
 #include "alpaca/request.h"
 #include "coinbase/response.h"
@@ -139,5 +137,3 @@ BOOST_FUSION_ADAPT_STRUCT(
         (std::string, avatar_url),
         (std::string, resource),
         (std::string, resource_path))
-
-#endif //APITEST_RESP_REFLECTION_H

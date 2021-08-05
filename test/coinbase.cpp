@@ -4,9 +4,16 @@
 
 TEST_CASE("CoinBase Account"){
 
-    setenv("COINBASE_API_KEY", "0L4Rj05foc6J1rTj", 1);
-    setenv("COINBASE_SECRET_KEY", "cHFSSklDnZFGPJ1sNjZ5bO1wyQz2RNkT", 1);
+    const char* API_KEY = "0L4Rj05foc6J1rTj";
+    const char* SECRET_KEY = "cHFSSklDnZFGPJ1sNjZ5bO1wyQz2RNkT";
 
+#ifdef _WIN32
+    _putenv_s("COINBASE_API_KEY", API_KEY);
+    _putenv_s("COINBASE_SECRET_KEY", SECRET_KEY);
+#else
+    setenv("COINBASE_API_KEY", API_KEY, 1);
+    setenv("COINBASE_SECRET_KEY", SECRET_KEY, 1);
+#endif
     broker::Coinbase coinbase;
 
 //    auto user = coinbase.GetUser();

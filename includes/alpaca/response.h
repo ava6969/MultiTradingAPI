@@ -106,4 +106,10 @@ struct PortfolioHistory{
     std::vector<uint64_t> timestamp;
 };
 
+struct Clock{
+    std::string timestamp;
+    bool is_open;
+
+};
+
 #endif //APITEST_RESPONSE_H

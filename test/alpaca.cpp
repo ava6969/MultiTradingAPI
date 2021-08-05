@@ -11,8 +11,13 @@ TEST_CASE("Alpaca"){
     const string PAPER_API_KEY = "PKU8PRISWFDX7M3H67ZN";
     const string PAPER_SECRET_KEY = "nYU6cPkk4TmmHwdcPd8ykoikQ11TnOuMV5MDlEoh";
 
+#ifdef _WIN32
+    _putenv_s("ALPACA_API_KEY", PAPER_API_KEY.c_str());
+    _putenv_s("ALPACA_SECRET_KEY", PAPER_SECRET_KEY.c_str());
+#else
     setenv("ALPACA_API_KEY", PAPER_API_KEY.c_str(), 1);
     setenv("ALPACA_SECRET_KEY", PAPER_SECRET_KEY.c_str(), 1);
+#endif
 
     broker::Alpaca alpaca1(false);
 
@@ -22,6 +27,9 @@ TEST_CASE("Alpaca"){
     {
         std::cout << order.id << "\t" << order.status << "\t" << order.symbol << "\n";
     }
+    string status = "active";
+
+    alpaca1.GetAssets(status);
 
 //    auto order = alpaca1.PlaceMarketOrder("AAPL", 22, false);
 
@@ -66,5 +74,28 @@ TEST_CASE("Alpaca"){
 //        std::cout << position.asset_id << "\t" << position.symbol << "\t" << position.side
 //        << "\t" << position.qty << "\t" << position.market_value << "\n";
 
+}
+
+TEST_CASE("Alpaca Asset Test"){
+
+
+    const string PAPER_API_KEY = "PKU8PRISWFDX7M3H67ZN";
+    const string PAPER_SECRET_KEY = "nYU6cPkk4TmmHwdcPd8ykoikQ11TnOuMV5MDlEoh";
+
+#ifdef _WIN32
+    _putenv_s("ALPACA_API_KEY", PAPER_API_KEY.c_str());
+    _putenv_s("ALPACA_SECRET_KEY", PAPER_SECRET_KEY.c_str());
+#else
+    setenv("ALPACA_API_KEY", PAPER_API_KEY.c_str(), 1);
+    setenv("ALPACA_SECRET_KEY", PAPER_SECRET_KEY.c_str(), 1);
+#endif
+
+    broker::Alpaca alpacaBroker(false);
+
+    auto assets = alpacaBroker.GetAssets("active");
+
+    for(auto const& asset : assets){
+        std::cout << asset.id << "\n";
+    }
 
 }
