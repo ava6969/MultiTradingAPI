@@ -9,8 +9,6 @@
 #include <boost/fusion/adapted.hpp>
 #include "coinbase/response.h"
 
-using namespace live_broker;
-
 BOOST_FUSION_ADAPT_STRUCT(
         CoinBaseAccount,
         (std::string, id),

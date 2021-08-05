@@ -11,24 +11,24 @@
 #include "openssl/ossl_typ.h"
 #include "coinbase/response.h"
 #include "coinbase/resp_reflection.h"
-#include "restc-cpp/restc-cpp.h"
-#include "restc-cpp/RequestBuilder.h"
+#include "live_broker.h"
 
-using namespace restc_cpp;
 using std::string;
 using std::setfill;
-using namespace std::string_literals;
 
-namespace live_broker
+namespace broker
 {
-    class Coinbase {
+    class Coinbase : public LiveBroker{
 
-
+        enum OrderStatus{
+            OPEN,
+            PENDING,
+            CLOSED,
+            ALL
+        };
     private:
-        const std::string API_KEY, SECRET_KEY;
 
-        std::unique_ptr<RestClient> client;
-
+        std::string signature, request_path, timestamp, body_str;
         string hmac(string const& key, string const& data)
         {
             unsigned int hash_sz = EVP_MAX_MD_SIZE;
@@ -46,46 +46,57 @@ namespace live_broker
 
         }
 
-        auto AccessSign()
+        void authenticate(RequestBuilder &builder) override
         {
+            timestamp = std::to_string(std::chrono::duration_cast<std::chrono::seconds>
+                    (std::chrono::high_resolution_clock::now().time_since_epoch()).count());
 
+            auto message = timestamp + command_type + request_path + body_str;
+
+            signature = hmac(SECRET_KEY, message);
+
+            builder
+            .Header("CB-ACCESS-KEY", API_KEY)
+            .Header("CB-ACCESS-SIGN", signature)
+            .Header("CB-ACCESS-TIMESTAMP", timestamp);
+        }
+
+        void set_method(std::string const& method) override
+        {
+            LiveBroker::set_method(method);
+            request_path = "/v2/" + method;
         }
 
     public:
-        Coinbase(std::string  API_KEY, std::string  SECRET_KEY)
-        :API_KEY(std::move(API_KEY)),
-        SECRET_KEY(std::move(SECRET_KEY)),
-        client(RestClient::Create())
+        Coinbase():
+        LiveBroker("https://api.coinbase.com",
+                   getenv("COINBASE_API_KEY"),
+                   getenv("COINBASE_SECRET_KEY"))
         {
 
         }
 
-        auto GetAccount()
+        auto GetUser(){
+            set_method("user");
+            return GetRaw<CoinBaseUser>();
+        }
+
+        CoinBaseAccount GetAccount(){
+            set_method("accounts");
+            return GetRaw<CoinBaseAccount>();
+        }
+
+        auto GetOrders(OrderStatus type,
+                       std::vector<std::string> const& account_ids)
         {
-            try {
-                auto account = client->ProcessWithPromiseT<CoinBaseAccount>([&](Context& ctx){
 
-                    CoinBaseAccount account;
-                    auto request_path = "/v2/accounts"s;
-                    auto request = "https://api.coinbase.com"s.append(request_path);
-                    std::string ts = std::to_string(std::chrono::duration_cast<std::chrono::seconds>
-                            (std::chrono::high_resolution_clock::now().time_since_epoch()).count());
-                    auto sign = ts + "GET"s + request_path + "";
-
-                    sign = hmac(SECRET_KEY, sign);
-
-                    SerializeFromJson(account, RequestBuilder(ctx).Get(request)
-                    // Add some headers for good taste
-                    .Header("CB-ACCESS-KEY", API_KEY)
-                    .Header("CB-ACCESS-SIGN", sign)
-                    .Header("CB-ACCESS-TIMESTAMP", ts).Execute());
-                    return account;
-                        }).get();
-            }catch(std::exception const& ex)
+            for(auto id: account_ids)
             {
-                std::cout << ex.what() << "\n";
+                set_method("accounts/");
             }
+
         }
+
     };
 
 }

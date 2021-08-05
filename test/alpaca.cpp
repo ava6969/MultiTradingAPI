@@ -1,11 +1,9 @@
+#define CATCH_CONFIG_MAIN
+#include "catch2/catch.hpp"
 #include <iostream>
 #include "alpaca/alpaca.h"
 
-int main() {
-
-//    std::string CB_ACCESS_KEY = "FeO3wfCOmrCMZ69W",
-//    SECRET_KEY = "Pews0p9mq3I1qmJTVNW2MSMwUgponbuR";
-
+TEST_CASE("Alpaca"){
 
     const string API_KEY = "AK77Y19ZEHJ3K764M9GR";
     const string SECRET_KEY = "KwjAOHWFgIFnmfFXfw9kTqjdciEILjP7QT6kOiMf";
@@ -13,11 +11,14 @@ int main() {
     const string PAPER_API_KEY = "PKU8PRISWFDX7M3H67ZN";
     const string PAPER_SECRET_KEY = "nYU6cPkk4TmmHwdcPd8ykoikQ11TnOuMV5MDlEoh";
 
-    live_broker::Alpaca alpaca1(false, PAPER_API_KEY, PAPER_SECRET_KEY);
+    setenv("ALPACA_API_KEY", PAPER_API_KEY.c_str(), 1);
+    setenv("ALPACA_SECRET_KEY", PAPER_SECRET_KEY.c_str(), 1);
+
+    broker::Alpaca alpaca1(false);
 
     std::cout << "All Orders:\n";
 
-    for(auto const& order : alpaca1.GetOrders(live_broker::Alpaca::ALL, {"AAPL"}))
+    for(auto const& order : alpaca1.GetOrders(broker::Alpaca::ALL, {"AAPL"}))
     {
         std::cout << order.id << "\t" << order.status << "\t" << order.symbol << "\n";
     }
@@ -65,5 +66,5 @@ int main() {
 //        std::cout << position.asset_id << "\t" << position.symbol << "\t" << position.side
 //        << "\t" << position.qty << "\t" << position.market_value << "\n";
 
-    return 0;
+
 }

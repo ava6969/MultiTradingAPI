@@ -10,21 +10,25 @@ file(GLOB ALPACA_LIB src/alpaca/*.cpp)
 
 include_directories(includes)
 set(Boost_USE_STATIC_LIBS ON)
+find_package(nlohmann_json 3.2.0 REQUIRED)
 find_package(glog CONFIG REQUIRED)
 find_package(restc-cpp CONFIG REQUIRED)
 find_package(Boost COMPONENTS coroutine context system program_options filesystem log REQUIRED )
 find_path(CPP_HTTPLIB_INCLUDE_DIRS "httplib.h")
 find_path(PICOSHA2_INCLUDE_DIRS "picosha2.h")
 
-add_executable(APITest main.cpp
+add_executable(APITest
+        test/alpaca.cpp
+        test/coinbase.cpp
         #${ALPACA_LIB}
-        includes/alpaca/response.h includes/alpaca/reflections.h src/alpaca/alpaca.cpp
-        includes/alpaca/alpaca.h src/coinbase/coinbase.cpp includes/coinbase/coinbase.h
-        includes/coinbase/response.h includes/coinbase/resp_reflection.h includes/broker.h includes/alpaca/request.h
-        )
+        includes/alpaca/response.h includes/alpaca/reflections.h
+        includes/alpaca/alpaca.h includes/coinbase/coinbase.h
+        includes/coinbase/response.h includes/coinbase/resp_reflection.h
+        includes/live_broker.h includes/alpaca/request.h
+        includes/coinbase/request.h)
 
 target_link_libraries(APITest PRIVATE ${Boost_LIBRARIES}
-        restc-cpp -lpthread -lboost_log
+        restc-cpp -lpthread -lboost_log nlohmann_json::nlohmann_json
         -lboost_coroutine -lboost_context glog::glog)
 
 target_include_directories(APITest PRIVATE ${CPP_HTTPLIB_INCLUDE_DIRS} ${PICOSHA2_INCLUDE_DIRS})

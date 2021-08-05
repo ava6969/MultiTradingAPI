@@ -5,8 +5,10 @@
 #ifndef APITEST_RESP_REFLECTION_H
 #define APITEST_RESP_REFLECTION_H
 
-#include "response.h"
-#include "request.h"
+#include "alpaca/response.h"
+#include "alpaca/request.h"
+#include "coinbase/response.h"
+#include "coinbase/request.h"
 
 BOOST_FUSION_ADAPT_STRUCT(
         Account,
@@ -35,8 +37,7 @@ BOOST_FUSION_ADAPT_STRUCT(
         (std::string, status),
         (bool, trade_suspended_by_user),
         (bool, trading_blocked),
-        (bool, transfers_blocked),
-        )
+        (bool, transfers_blocked))
 
 BOOST_FUSION_ADAPT_STRUCT(
         Order,
@@ -118,7 +119,6 @@ BOOST_FUSION_ADAPT_STRUCT(
         (std::string, date_end),
         (bool, extended_hours))
 
-
 BOOST_FUSION_ADAPT_STRUCT(
         PortfolioHistory,
         (double, base_value),
@@ -127,4 +127,17 @@ BOOST_FUSION_ADAPT_STRUCT(
         (std::vector<double>, profit_loss_pct),
         (std::string, timeframe),
         (std::vector<uint64_t>, timestamp))
+
+BOOST_FUSION_ADAPT_STRUCT(
+        CoinBaseUser,
+        (std::string, id),
+        (std::string, name),
+        (std::string, username),
+        (std::string, profile_location),
+        (std::string, profile_bio),
+        (std::string, profile_url),
+        (std::string, avatar_url),
+        (std::string, resource),
+        (std::string, resource_path))
+
 #endif //APITEST_RESP_REFLECTION_H

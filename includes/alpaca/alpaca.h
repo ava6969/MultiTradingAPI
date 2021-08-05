@@ -6,21 +6,19 @@
 #define APITEST_ALPACA_H
 
 #include <utility>
-
+#include "live_broker.h"
 #include "alpaca/reflections.h"
-#include "restc-cpp/restc-cpp.h"
-#include "restc-cpp/RequestBuilder.h"
 
 #define BOOST_LOG_DYN_LINK 1
-using namespace std::string_literals;
 
-using namespace restc_cpp;
+
+
 using std::vector;
 
-namespace live_broker
+namespace broker
 {
 
-    class Alpaca {
+    class Alpaca : public LiveBroker {
 
     public:
         enum OrderStatus{
@@ -30,110 +28,25 @@ namespace live_broker
         };
 
     private:
-        const std::string API_KEY, SECRET_KEY, BASE_URL;
-        std::unique_ptr<RestClient> client;
-        std::string base;
 
-
-        void Delete(std::function<std::unique_ptr<Reply>(RequestBuilder&&)>&& reply_fn) {
-            try {
-                return client->Process([&](Context& ctx)
-                {
-                    auto reply = reply_fn(std::move(RequestBuilder(ctx).Delete(base)
-                            // Add some headers for good taste
-                            .Header("APCA-API-KEY-ID", API_KEY)
-                            .Header("APCA-API-SECRET-KEY", SECRET_KEY)));
-                    auto result = reply->GetResponseCode();
-                });
-            }catch(std::exception const& ex)
-            {
-                std::cout << ex.what() << "\n";
-            }
-        }
-
-        template<typename T>
-        T Get(std::function<std::unique_ptr<Reply>(RequestBuilder&&)>&& reply_fn) {
-            try {
-                return client->ProcessWithPromiseT<T>([&](Context& ctx)
-                {
-                    T data;
-                    auto reply = reply_fn(std::move(RequestBuilder(ctx).Get(base)
-                            // Add some headers for good taste
-                            .Header("APCA-API-KEY-ID", API_KEY)
-                            .Header("APCA-API-SECRET-KEY", SECRET_KEY)));
-                    auto result = reply->GetResponseCode();
-                    SerializeFromJson(data, std::move(reply));
-                    return data;
-                }).get();
-            }catch(std::exception const& ex)
-            {
-                std::cout << ex.what() << "\n";
-            }
-        }
-
-        template<typename T>
-        T GetRaw(std::function<std::unique_ptr<Reply>(RequestBuilder&&)>&& reply_fn) {
-            try {
-                return client->ProcessWithPromiseT<T>([&](Context& ctx)
-                {
-                    T data;
-                    auto reply = reply_fn(std::move(RequestBuilder(ctx).Get(base)
-                            // Add some headers for good taste
-                            .Header("APCA-API-KEY-ID", API_KEY)
-                            .Header("APCA-API-SECRET-KEY", SECRET_KEY)));
-                    auto result = reply->GetResponseCode();
-                    SerializeFromJson(data, std::move(reply));
-                    return data;
-                }).get();
-            }catch(std::exception const& ex)
-            {
-                std::cout << ex.what() << "\n";
-            }
-        }
-
-
-        template<typename T>
-        T Post(std::function<std::unique_ptr<Reply>(RequestBuilder&&)>&& reply_fn) {
-            try {
-                return client->ProcessWithPromiseT<T>([&](Context& ctx)
-                {
-                    T data;
-                    auto reply = reply_fn(std::move(RequestBuilder(ctx).Post(base)
-                            // Add some headers for good taste
-                            .Header("APCA-API-KEY-ID", API_KEY)
-                            .Header("APCA-API-SECRET-KEY", SECRET_KEY)));
-                    auto result = reply->GetResponseCode();
-                    SerializeFromJson(data, std::move(reply));
-                    return data;
-                }).get();
-            }catch(std::exception const& ex)
-            {
-                std::cout << ex.what() << "\n";
-            }
-        }
-
-        auto set_method(std::string const& method)
+        void authenticate(RequestBuilder& builder) override
         {
-            base = BASE_URL + "/v2/"s.append(method);
+            builder.Header("APCA-API-KEY-ID", API_KEY)
+            .Header("APCA-API-SECRET-KEY", SECRET_KEY);
         }
 
     public:
-        Alpaca(bool live, std::string  API_KEY, std::string  SECRET_KEY)
-        :API_KEY(std::move(API_KEY)),
-        SECRET_KEY(std::move(SECRET_KEY)),
-        client(RestClient::Create()),
-        BASE_URL(live ? "https://api.alpaca.markets" : "https://paper-api.alpaca.markets" )
-        {
+        explicit Alpaca(bool live):
+        LiveBroker(live ? "https://api.alpaca.markets" : "https://paper-api.alpaca.markets",
+                   getenv("ALPACA_API_KEY"),
+                   getenv("ALPACA_SECRET_KEY")){
 
         }
 
         auto GetAccount()
         {
             set_method("account");
-            return Get<Account>([](RequestBuilder&& builder)
-            {
-                return builder.Execute();
-            });
+            return Get<Account>();
         }
 
         auto GetOrders(OrderStatus type, vector<std::string> const& symbols)
@@ -147,11 +60,10 @@ namespace live_broker
 
             set_method("orders");
             try{
-                return Get<vector<Order>>([&order_status, &sym](RequestBuilder&& builder){
-                    return builder
+                return Get<vector<Order>>([&order_status, &sym](RequestBuilder& builder){
+                    builder
                     .Argument("status", order_status)
-                    .Argument("symbols", sym)
-                    .Execute();
+                    .Argument("symbols", sym);
                 });
             }catch(std::exception const& ex)
             {
@@ -163,34 +75,17 @@ namespace live_broker
 
         std::optional<Order>  GetOrder(std::string const& order_id)
         {
-            try{
-                set_method("orders/"s.append(order_id));
-                return Get<Order>([](RequestBuilder&& builder){
-                    return builder
-                    .Execute();
-                });
-            }catch(std::exception const& ex)
-            {
-                std::cerr << ex.what() << "\n";
-            }
-            return std::nullopt;
-
+            set_method("orders/"s.append(order_id));
+            return Get<Order>();
         }
 
         std::optional<Order>  GetOrderWithClientID(std::string const& client_order_id)
         {
             set_method("orders:by_client_order_id");
-            try{
-                return Get<Order>([&client_order_id](RequestBuilder&& builder){
-                    return builder
-                    .Argument("client_order_id", client_order_id)
-                    .Execute();
-                });
-            }catch(std::exception const& ex)
-            {
-                std::cerr << ex.what() << "\n";
-            }
-            return std::nullopt;
+            return Get<Order>([&client_order_id](RequestBuilder& builder){
+                builder
+                .Argument("client_order_id", client_order_id);
+            });
         }
 
         std::optional<Order> PlaceMarketOrder(string const& symbol, float qty, bool buy) {
@@ -203,114 +98,60 @@ namespace live_broker
 
             set_method("orders");
 
-            try {
-                return Post<Order>([&](RequestBuilder&& builder){
-                    return builder
-                    .Data(body)
-                    .Execute();
-                });
-            }catch(std::exception const& ex)
-            {
-                std::cerr << ex.what() << "\n";
-            }
-            return std::nullopt;
+            return Post<Order>([&](RequestBuilder& builder){
+                builder
+                .Data(body)
+                .Execute();
+            });
         }
 
         auto CancelAllOpenOrders() {
-
             set_method("orders");
-            try {
-                Delete([&](RequestBuilder&& builder){
-                    return builder
-                    .Execute();
-                });
-                return true;
-            }catch(std::exception const& ex)
-            {
-                std::cerr << ex.what() << "\n";
-            }
-            return false;
+            Delete();
         }
 
         auto CancelOrder(std::string const& order_id) {
             set_method("orders/"s.append(order_id));
-            try {
-                Delete([&](RequestBuilder&& builder){
-                    return builder
-                    .Execute();
-                });
-                return true;
-            }catch(std::runtime_error const& ex)
-            {
-                std::cerr << ex.what() << "\n";
-            }
-            return false;
-
+            Delete();
         }
 
-       vector<Position> GetOpenPositions()
-       {
+       vector<Position> GetOpenPositions(){
            set_method("positions");
-           return Get<vector<Position>>([](RequestBuilder&& builder){
-               return builder.Execute();
-           });
+           return Get<vector<Position>>();
        }
 
        auto GetAnOpenPosition(std::string const& symbol)
        {
            set_method("positions/"s.append(symbol));
-           return Get<Position>([](RequestBuilder&& builder){
-               return builder
-               .Execute();
-           });
+           return Get<Position>();
        }
 
        bool CloseAllPositions()
        {
-           try {
-               set_method("positions");
-               Delete([](RequestBuilder&& builder){
-                   return builder.
-                   Argument("cancel_orders", true).
-                   Execute();
-               });
-               return true;
-           }catch (const std::exception& ex) {
-               std::cout << "Caught exception: " << ex.what() << std::endl;
-           }
-           return false;
+           set_method("positions");
+           Delete([](RequestBuilder& builder){
+               builder.
+               Argument("cancel_orders", true);
+           });
        }
 
        bool CloseAnOpenPosition(std::string const& symbol)
        {
-            try {
-                set_method("positions/"s.append(symbol));
-                Delete([](RequestBuilder&& builder){
-                    return builder.
-                    Argument("cancel_orders", true).
-                    Execute();
-                });
-                return true;
-            }catch (const std::exception& ex) {
-                std::cout << "Caught exception: " << ex.what() << std::endl;
-            }
-            return false;
+            set_method("positions/"s.append(symbol));
+            Delete([](RequestBuilder& builder){
+                builder.
+                Argument("cancel_orders", true);
+            });
        }
 
        PortfolioHistory GetAccountPortfolioHistory(PortfolioHistoryRequest const& portfolioHistory)
        {
-            try {
-                set_method("account/portfolio/history");
+            set_method("account/portfolio/history");
 
-                return Get<PortfolioHistory>([&portfolioHistory](RequestBuilder&& builder){
-                    return builder.
-                    Data(portfolioHistory).
-                    Execute();
-                });
-            }catch (const std::exception& ex) {
-                std::cout << "Caught exception: " << ex.what() << std::endl;
-            }
-            return {};
+            return Get<PortfolioHistory>([&portfolioHistory](RequestBuilder& builder){
+                builder.
+                Data(portfolioHistory);
+            });
        }
 
        ~Alpaca()
